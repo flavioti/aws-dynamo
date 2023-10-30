@@ -1,0 +1,47 @@
+import boto3
+import pprint
+from boto3.dynamodb.conditions import Key
+import multiprocessing
+from codetiming import Timer
+import logging
+import typing
+import boto3.dynamodb.conditions as conditions
+
+logger = multiprocessing.log_to_stderr()
+logger.setLevel(logging.WARNING)
+table = boto3.Session(region_name="sa-east-1").resource("dynamodb").Table("my-table")
+
+
+@Timer()
+def get_all_model_information(customer_id: str) -> typing.List[dict]:
+    response = table.query(
+        KeyConditionExpression=conditions.Key("id_customer").eq(customer_id),
+        ScanIndexForward=False,
+        Limit=1,
+    )
+    return response["Items"][0] if len(response["Items"]) > 0 else None
+
+
+@Timer()  # remover antes de ir para producao, faz ficar mais lento
+def query_an_item(key):
+    # Query an item by key
+    results = table.query(
+        KeyConditionExpression=Key("id_customer").eq(key),
+    )
+    # sort items in descending order by sort key
+    items_sorted = sorted(results["Items"], key=lambda d: d["cd_month_ref"], reverse=True)
+    # return the most recent item
+    return items_sorted[0] if len(items_sorted) == 1 else {}
+
+
+if __name__ == "__main__":
+    # mock API request
+    keys_to_query = [
+        "123456#model_a",
+        "123456#model_b",
+    ]
+    p = multiprocessing.Pool()
+    results = p.map(get_all_model_information, keys_to_query)
+    p.close()
+    p.join()
+    pprint.pprint(results)
