@@ -15,7 +15,7 @@ table = boto3.Session(region_name="sa-east-1").resource("dynamodb").Table("my-ta
 @Timer()
 def get_all_model_information(customer_id: str) -> typing.List[dict]:
     response = table.query(
-        KeyConditionExpression=conditions.Key("id_customer").eq(customer_id),
+        KeyConditionExpression=conditions.Key("id_customer").eq(client_id),
         ScanIndexForward=False,
         Limit=1,
     )
@@ -29,7 +29,7 @@ def query_an_item(key):
         KeyConditionExpression=Key("id_customer").eq(key),
     )
     # sort items in descending order by sort key
-    items_sorted = sorted(results["Items"], key=lambda d: d["cd_month_ref"], reverse=True)
+    items_sorted = sorted(results["Items"], key=lambda d: d["month_ref"], reverse=True)
     # return the most recent item
     return items_sorted[0] if len(items_sorted) == 1 else {}
 
